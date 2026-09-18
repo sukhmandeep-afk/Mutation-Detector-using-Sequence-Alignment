@@ -16,6 +16,16 @@ from detector import validate_sequence, detect_mutations, read_fasta
 from report import mutations_to_dataframe, summarize_mutations
 
 st.set_page_config(page_title="Mutation Detector", page_icon="🧬", layout="centered")
+# Hide Streamlit header, top-right menu, and GitHub links
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stAppHeader {display: none;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 st.title("🧬 Mutation Detector Using Sequencing Alignment")
 st.write(
