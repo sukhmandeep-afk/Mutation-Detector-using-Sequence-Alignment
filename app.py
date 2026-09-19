@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Custom CSS styling (Background animations, glassmorphic cards, menu cleanup)
+# 2. Advanced Animation & Dark Glassmorphism CSS Injector
 custom_css = """
 <style>
 /* Hide default Streamlit header, footer, and top menu */
@@ -22,35 +22,36 @@ header {visibility: hidden;}
 footer {visibility: hidden;}
 .stAppHeader {display: none;}
 
-/* Dynamic Animated Background */
+/* Main App Container with Dynamic Gradient & Moving Elements */
 .stApp {
-    background: linear-gradient(-45deg, #0f172a, #1e1b4b, #311042, #020617);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
-    color: #f8fafc;
+    background: linear-gradient(-45deg, #090d16, #111827, #1e1b4b, #0f172a) !important;
+    background-size: 400% 400% !important;
+    animation: gradientAnimation 12s ease infinite !important;
 }
 
-@keyframes gradientBG {
+@keyframes gradientAnimation {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
 
-/* Glassmorphic Container Cards */
+/* Glassmorphic Cards */
 .metric-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: 12px;
     padding: 18px;
     text-align: center;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    transition: transform 0.3s ease, border-color 0.3s ease;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    transition: all 0.3s ease;
 }
 
 .metric-card:hover {
     transform: translateY(-4px);
-    border-color: #818cf8;
+    border-color: #6366f1;
+    box-shadow: 0 12px 40px 0 rgba(99, 102, 241, 0.25);
 }
 
 .metric-card h3 {
@@ -58,7 +59,7 @@ footer {visibility: hidden;}
     font-size: 13px;
     color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 1px;
 }
 
 .metric-card p {
@@ -68,21 +69,21 @@ footer {visibility: hidden;}
     color: #38bdf8;
 }
 
-/* Hero Banner */
+/* Header Banner */
 .hero-header {
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(15, 23, 42, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(16px);
     border-radius: 16px;
     padding: 24px;
     margin-bottom: 25px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
 .hero-header h1 {
     color: #f8fafc;
     font-weight: 800;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .hero-header p {
@@ -91,7 +92,7 @@ footer {visibility: hidden;}
     margin: 0;
 }
 
-/* Alignment display box */
+/* Sequence alignment box styling */
 .alignment-box {
     background-color: rgba(2, 6, 23, 0.85);
     border: 1px solid #334155;
@@ -134,16 +135,27 @@ else:
         seq1 = "".join([line.decode("utf-8").strip() for line in file1 if not line.decode("utf-8").startswith(">")]).upper()
         seq2 = "".join([line.decode("utf-8").strip() for line in file2 if not line.decode("utf-8").startswith(">")]).upper()
 
-# 5. Helper Function to generate mutation counts safely
+# 5. Robust Summary Helper (Handles Dictionaries, Lists, or Objects safely)
 def generate_summary(mutations):
     summary = {"Substitution": 0, "Insertion": 0, "Deletion": 0}
     for m in mutations:
-        m_type = m.get("type") or m.get("Type") or m.get("mutation_type")
+        m_type = None
+        if isinstance(m, dict):
+            m_type = m.get("type") or m.get("Type") or m.get("mutation_type")
+        elif isinstance(m, (list, tuple)) and len(m) > 0:
+            m_type = m[0]
+        
         if m_type in summary:
             summary[m_type] += 1
+        elif m_type:
+            # Fallback for matching strings containing key words
+            m_str = str(m_type).lower()
+            if "sub" in m_str: summary["Substitution"] += 1
+            elif "ins" in m_str: summary["Insertion"] += 1
+            elif "del" in m_str: summary["Deletion"] += 1
     return summary
 
-# 6. Pipeline Execution
+# 6. Pipeline Execution Trigger
 run_analysis = st.sidebar.button("🔬 Run Pipeline", use_container_width=True, type="primary")
 
 if run_analysis:
@@ -151,7 +163,6 @@ if run_analysis:
         st.error("⚠️ Please provide valid sequences in both input fields before running analysis.")
     else:
         with st.spinner("Processing alignment and calculating variants..."):
-            # Fixed Line: Unpack exact 2 values returned by align_sequences
             alignment_result = align_sequences(seq1, seq2)
             if isinstance(alignment_result, tuple) and len(alignment_result) == 3:
                 aligned_ref, aligned_sam, align_score = alignment_result
@@ -181,7 +192,7 @@ if run_analysis:
         st.write("")
         st.write("")
 
-        # Results Tabs
+        # Presentation Tabs
         tab1, tab2, tab3, tab4 = st.tabs(["📜 Alignment View", "📊 Variant Table", "📈 Distribution Chart", "💾 Export Results"])
 
         with tab1:
@@ -205,13 +216,18 @@ if run_analysis:
             st.subheader("Mutation Breakdown")
             if mutations:
                 if hasattr(report, 'plot_mutation_distribution'):
-                    fig = report.plot_mutation_distribution(summary)
-                    st.pyplot(fig)
+                    try:
+                        fig = report.plot_mutation_distribution(summary)
+                        st.pyplot(fig)
+                    except Exception:
+                        fig, ax = plt.subplots(figsize=(6, 3))
+                        ax.bar(summary.keys(), summary.values(), color=['#38bdf8', '#818cf8', '#f43f5e'])
+                        ax.set_ylabel("Count")
+                        st.pyplot(fig)
                 else:
                     fig, ax = plt.subplots(figsize=(6, 3))
                     ax.bar(summary.keys(), summary.values(), color=['#38bdf8', '#818cf8', '#f43f5e'])
                     ax.set_ylabel("Count")
-                    ax.set_title("Mutation Types")
                     st.pyplot(fig)
             else:
                 st.info("No distribution chart available (Zero variants detected).")
