@@ -12,21 +12,20 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# 2. Styling (Hides default headers, adds dark gradient background and glass cards)
-custom_css = """
+# 2. Styling (Hides default headers, adds targetable dark gradient background and glass cards)
+st.html("""
 <style>
-/* Hide Streamlit header, footer, and menu */
-#MainMenu {visibility: hidden;}
-header {visibility: hidden;}
-footer {visibility: hidden;}
-.stAppHeader {display: none;}
+/* Hide default Streamlit header, footer, and menu */
+#MainMenu {visibility: hidden !important;}
+header {visibility: hidden !important;}
+footer {visibility: hidden !important;}
+.stAppHeader {display: none !important;}
 
-/* Dark gradient background */
-.stApp {
-    background: linear-gradient(-45deg, #090d16, #111827, #1e1b4b, #0f172a) !important;
+/* Root app container forced gradient animation */
+[data-testid="stAppViewContainer"], .stApp {
+    background: linear-gradient(-45deg, #090d16, #1e1b4b, #311042, #020617) !important;
     background-size: 400% 400% !important;
-    animation: gradientAnimation 12s ease infinite !important;
+    animation: gradientAnimation 10s ease infinite !important;
 }
 
 @keyframes gradientAnimation {
@@ -35,10 +34,16 @@ footer {visibility: hidden;}
     100% { background-position: 0% 50%; }
 }
 
-/* Metric card styling */
+/* Sidebar background styling */
+[data-testid="stSidebar"] {
+    background-color: rgba(15, 23, 42, 0.75) !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+/* Glassmorphic Metric Cards */
 .metric-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-radius: 12px;
@@ -92,7 +97,7 @@ footer {visibility: hidden;}
     margin: 0;
 }
 
-/* Alignment display box */
+/* Sequence alignment display box */
 .alignment-box {
     background-color: rgba(2, 6, 23, 0.85);
     border: 1px solid #334155;
@@ -105,15 +110,8 @@ footer {visibility: hidden;}
     word-break: break-all;
 }
 </style>
-"""
-st.markdown(custom_css, unsafe_allow_html=True)
+""")
 
-# 3. Main Header Section
-st.markdown("""
-<div class="hero-header">
-    <h1>🧬 DNA Mutation Detection Platform</h1>
-    <p>Automated sequence alignment and variant calling pipeline for genomic analysis.</p>
-</div>
 """, unsafe_allow_html=True)
 
 # 4. Input Sidebar
