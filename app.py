@@ -1,18 +1,9 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import report
 from align import align_sequences
 from detector import detect_mutations
-import report  # Import the module directly to prevent name import errors
-
-# Helper function to generate summary counts safely
-def generate_summary(mutations):
-    summary = {"Substitution": 0, "Insertion": 0, "Deletion": 0}
-    for m in mutations:
-        m_type = m.get("type") or m.get("Type") or m.get("mutation_type")
-        if m_type in summary:
-            summary[m_type] += 1
-    return summary
 
 # 1. Page Configuration
 st.set_page_config(
@@ -22,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Custom CSS styling (Hides menus, adds custom background, cards, and UI polish)
+# 2. Custom CSS styling (Background animations, glassmorphic cards, menu cleanup)
 custom_css = """
 <style>
 /* Hide default Streamlit header, footer, and top menu */
@@ -31,38 +22,40 @@ header {visibility: hidden;}
 footer {visibility: hidden;}
 .stAppHeader {display: none;}
 
-/* Modern gradient background with abstract subtle animation */
+/* Dynamic Animated Background */
 .stApp {
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    background: linear-gradient(-45deg, #0f172a, #1e1b4b, #311042, #020617);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
     color: #f8fafc;
-    font-family: 'Inter', sans-serif;
 }
 
-/* Container Glassmorphism effect */
-div[data-testid="stExpander"], div[data-testid="stForm"], .css-1r6slb0, .stMarkdownContainer {
-    border-radius: 10px;
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
-/* Custom Card Layouts for Metric summaries */
+/* Glassmorphic Container Cards */
 .metric-card {
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(12px);
     border-radius: 12px;
     padding: 18px;
     text-align: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
 .metric-card:hover {
-    transform: translateY(-3px);
-    border-color: #6366f1;
+    transform: translateY(-4px);
+    border-color: #818cf8;
 }
 
 .metric-card h3 {
     margin: 0;
-    font-size: 14px;
+    font-size: 13px;
     color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.8px;
@@ -70,20 +63,20 @@ div[data-testid="stExpander"], div[data-testid="stForm"], .css-1r6slb0, .stMarkd
 
 .metric-card p {
     margin: 8px 0 0 0;
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
     color: #38bdf8;
 }
 
-/* Hero Section Branding */
+/* Hero Banner */
 .hero-header {
-    background: rgba(30, 41, 59, 0.7);
+    background: rgba(15, 23, 42, 0.65);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
     border-radius: 16px;
     padding: 24px;
     margin-bottom: 25px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 .hero-header h1 {
@@ -94,13 +87,13 @@ div[data-testid="stExpander"], div[data-testid="stForm"], .css-1r6slb0, .stMarkd
 
 .hero-header p {
     color: #cbd5e1;
-    font-size: 16px;
+    font-size: 15px;
     margin: 0;
 }
 
-/* Sequence alignment box styling */
+/* Alignment display box */
 .alignment-box {
-    background-color: #020617;
+    background-color: rgba(2, 6, 23, 0.85);
     border: 1px solid #334155;
     border-radius: 8px;
     padding: 15px;
@@ -118,11 +111,11 @@ st.markdown(custom_css, unsafe_allow_html=True)
 st.markdown("""
 <div class="hero-header">
     <h1>🧬 DNA Mutation Detection Platform</h1>
-    <p>Automated global sequence alignment (Needleman-Wunsch) and variant identification pipeline for genetic analysis.</p>
+    <p>Automated sequence alignment and variant calling pipeline for genomic analysis.</p>
 </div>
 """, unsafe_allow_html=True)
 
-# 4. Input Controls Section
+# 4. Input Sidebar
 st.sidebar.header("⚙️ Sequence Input")
 input_option = st.sidebar.radio("Select Input Source:", ["Manual Input", "Upload FASTA Files"])
 
@@ -132,7 +125,6 @@ if input_option == "Manual Input":
     st.sidebar.subheader("Enter Sequences")
     seq1 = st.sidebar.text_area("Reference Sequence (DNA):", "ATCGGACTACGA", height=100).upper().strip()
     seq2 = st.sidebar.text_area("Sample Sequence (DNA):", "ATCGAACTACGA", height=100).upper().strip()
-
 else:
     st.sidebar.subheader("Upload FASTA Files")
     file1 = st.sidebar.file_uploader("Reference FASTA (.fasta / .txt)", type=["fasta", "txt", "fa"])
@@ -142,7 +134,16 @@ else:
         seq1 = "".join([line.decode("utf-8").strip() for line in file1 if not line.decode("utf-8").startswith(">")]).upper()
         seq2 = "".join([line.decode("utf-8").strip() for line in file2 if not line.decode("utf-8").startswith(">")]).upper()
 
-# 5. Pipeline Execution Trigger
+# 5. Helper Function to generate mutation counts safely
+def generate_summary(mutations):
+    summary = {"Substitution": 0, "Insertion": 0, "Deletion": 0}
+    for m in mutations:
+        m_type = m.get("type") or m.get("Type") or m.get("mutation_type")
+        if m_type in summary:
+            summary[m_type] += 1
+    return summary
+
+# 6. Pipeline Execution
 run_analysis = st.sidebar.button("🔬 Run Pipeline", use_container_width=True, type="primary")
 
 if run_analysis:
@@ -150,18 +151,24 @@ if run_analysis:
         st.error("⚠️ Please provide valid sequences in both input fields before running analysis.")
     else:
         with st.spinner("Processing alignment and calculating variants..."):
-            # Execute backend modules without changing any logic
-            aligned_ref, aligned_sam, align_score = align_sequences(seq1, seq2)
+            # Fixed Line: Unpack exact 2 values returned by align_sequences
+            alignment_result = align_sequences(seq1, seq2)
+            if isinstance(alignment_result, tuple) and len(alignment_result) == 3:
+                aligned_ref, aligned_sam, align_score = alignment_result
+            else:
+                aligned_ref, aligned_sam = alignment_result[0], alignment_result[1]
+                align_score = "N/A"
+
             mutations = detect_mutations(aligned_ref, aligned_sam)
             summary = generate_summary(mutations)
 
         st.success("✅ Analysis Completed Successfully!")
 
-        # 6. Interactive Metric Dashboard
+        # Metric Summary Row
         col1, col2, col3, col4, col5 = st.columns(5)
         
         with col1:
-            st.markdown(f'<div class="metric-card"><h3>Alignment Score</h3><p>{align_score:.1f}</p></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-card"><h3>Alignment Score</h3><p>{align_score}</p></div>', unsafe_allow_html=True)
         with col2:
             st.markdown(f'<div class="metric-card"><h3>Substitutions</h3><p>{summary.get("Substitution", 0)}</p></div>', unsafe_allow_html=True)
         with col3:
@@ -174,7 +181,7 @@ if run_analysis:
         st.write("")
         st.write("")
 
-        # 7. Presentation Tabs for Results
+        # Results Tabs
         tab1, tab2, tab3, tab4 = st.tabs(["📜 Alignment View", "📊 Variant Table", "📈 Distribution Chart", "💾 Export Results"])
 
         with tab1:
@@ -197,8 +204,15 @@ if run_analysis:
         with tab3:
             st.subheader("Mutation Breakdown")
             if mutations:
-                fig = plot_mutation_distribution(summary)
-                st.pyplot(fig)
+                if hasattr(report, 'plot_mutation_distribution'):
+                    fig = report.plot_mutation_distribution(summary)
+                    st.pyplot(fig)
+                else:
+                    fig, ax = plt.subplots(figsize=(6, 3))
+                    ax.bar(summary.keys(), summary.values(), color=['#38bdf8', '#818cf8', '#f43f5e'])
+                    ax.set_ylabel("Count")
+                    ax.set_title("Mutation Types")
+                    st.pyplot(fig)
             else:
                 st.info("No distribution chart available (Zero variants detected).")
 
