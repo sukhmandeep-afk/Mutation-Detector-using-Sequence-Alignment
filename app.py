@@ -12,7 +12,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-# 2. Styling (Hides default headers, adds targetable dark gradient background and glass cards)
+
+# 2. Advanced Styling (Targetable animated background & glassmorphic cards)
 st.html("""
 <style>
 /* Hide default Streamlit header, footer, and menu */
@@ -34,7 +35,7 @@ footer {visibility: hidden !important;}
     100% { background-position: 0% 50%; }
 }
 
-/* Sidebar background styling */
+/* Sidebar styling */
 [data-testid="stSidebar"] {
     background-color: rgba(15, 23, 42, 0.75) !important;
     backdrop-filter: blur(12px) !important;
@@ -97,7 +98,7 @@ footer {visibility: hidden !important;}
     margin: 0;
 }
 
-/* Sequence alignment display box */
+/* Alignment display box */
 .alignment-box {
     background-color: rgba(2, 6, 23, 0.85);
     border: 1px solid #334155;
@@ -112,6 +113,12 @@ footer {visibility: hidden !important;}
 </style>
 """)
 
+# 3. Main Header Section
+st.markdown("""
+<div class="hero-header">
+    <h1>🧬 DNA Mutation Detection Platform</h1>
+    <p>Automated sequence alignment and variant calling pipeline for genomic analysis.</p>
+</div>
 """, unsafe_allow_html=True)
 
 # 4. Input Sidebar
@@ -133,12 +140,11 @@ else:
         seq1 = "".join([line.decode("utf-8").strip() for line in file1 if not line.decode("utf-8").startswith(">")]).upper()
         seq2 = "".join([line.decode("utf-8").strip() for line in file2 if not line.decode("utf-8").startswith(">")]).upper()
 
-# 5. Summary Helper (Extracts string attributes from custom objects safely)
+# 5. Robust Summary Helper (Handles objects, dicts, lists safely)
 def generate_summary(mutations):
     summary = {"Substitution": 0, "Insertion": 0, "Deletion": 0}
     for m in mutations:
         raw_val = None
-        # Handle custom class objects, dictionaries, lists, or strings
         if hasattr(m, "type"):
             raw_val = getattr(m, "type")
         elif hasattr(m, "mutation_type"):
@@ -150,7 +156,6 @@ def generate_summary(mutations):
         else:
             raw_val = str(m)
 
-        # Convert to string to avoid unhashable type errors
         m_str = str(raw_val).lower() if raw_val is not None else ""
 
         if "sub" in m_str:
@@ -204,12 +209,7 @@ if run_analysis:
 
         with tab1:
             st.subheader("Global Sequence Alignment Output")
-            st.markdown(f"""
-            <div class="alignment-box">
-<b>Ref:</b>  {aligned_ref}
-<b>Sam:</b>  {aligned_sam}
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f'<div class="alignment-box"><b>Ref:</b> {aligned_ref}<br><b>Sam:</b> {aligned_sam}</div>', unsafe_allow_html=True)
 
         with tab2:
             st.subheader("Detected Mutations (1-Based Reference Indexing)")
