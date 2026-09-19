@@ -3,7 +3,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from align import align_sequences
 from detector import detect_mutations
-from report import generate_summary, save_csv_report, plot_mutation_distribution
+import report  # Import the module directly to prevent name import errors
+
+# Helper function to generate summary counts safely
+def generate_summary(mutations):
+    summary = {"Substitution": 0, "Insertion": 0, "Deletion": 0}
+    for m in mutations:
+        m_type = m.get("type") or m.get("Type") or m.get("mutation_type")
+        if m_type in summary:
+            summary[m_type] += 1
+    return summary
 
 # 1. Page Configuration
 st.set_page_config(
