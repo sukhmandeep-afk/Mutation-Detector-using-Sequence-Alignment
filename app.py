@@ -13,14 +13,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Advanced Styling (Targetable animated background & glassmorphic cards)
+# 2. Advanced Styling (Fixed sidebar toggle, dark mode text contrast & dynamic background)
 st.html("""
 <style>
-/* Hide default Streamlit header, footer, and menu */
+/* Hide developer header and menus BUT keep sidebar collapse toggle button visible */
 #MainMenu {visibility: hidden !important;}
-header {visibility: hidden !important;}
 footer {visibility: hidden !important;}
-.stAppHeader {display: none !important;}
+header [data-testid="stHeaderActionElements"] {display: none !important;}
 
 /* Root app container forced gradient animation */
 [data-testid="stAppViewContainer"], .stApp {
@@ -35,10 +34,21 @@ footer {visibility: hidden !important;}
     100% { background-position: 0% 50%; }
 }
 
-/* Sidebar styling */
+/* Sidebar styling & Bold White Text fixes */
 [data-testid="stSidebar"] {
-    background-color: rgba(15, 23, 42, 0.75) !important;
+    background-color: rgba(15, 23, 42, 0.85) !important;
     backdrop-filter: blur(12px) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Make all text, headers, radios, and labels inside sidebar bold and bright white */
+[data-testid="stSidebar"] *, 
+[data-testid="stSidebar"] label, 
+[data-testid="stSidebar"] p, 
+[data-testid="stSidebar"] span, 
+[data-testid="stSidebar"] div {
+    color: #ffffff !important;
+    font-weight: 700 !important;
 }
 
 /* Glassmorphic Metric Cards */
