@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Advanced Styling (Fixed sidebar toggle, dark mode text contrast & dynamic background)
+# 2. Advanced Styling (Adaptive Text Color per Light/Dark Mode)
 st.html("""
 <style>
 /* Hide developer header and menus BUT keep sidebar collapse toggle button visible */
@@ -34,21 +34,57 @@ header [data-testid="stHeaderActionElements"] {display: none !important;}
     100% { background-position: 0% 50%; }
 }
 
-/* Sidebar styling & Bold White Text fixes */
+/* Sidebar Container Styling */
 [data-testid="stSidebar"] {
-    background-color: rgba(15, 23, 42, 0.85) !important;
-    backdrop-filter: blur(12px) !important;
+    background-color: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(16px) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Make all text, headers, radios, and labels inside sidebar bold and bright white */
+/* Default Dark Mode Styling for Sidebar Text and Inputs */
 [data-testid="stSidebar"] *, 
 [data-testid="stSidebar"] label, 
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] span, 
-[data-testid="stSidebar"] div {
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
     color: #ffffff !important;
     font-weight: 700 !important;
+}
+
+[data-testid="stSidebar"] textarea, 
+[data-testid="stSidebar"] input {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Light Mode Overrides: Triggered automatically when device is in Light Mode */
+@media (prefers-color-scheme: light) {
+    [data-testid="stSidebar"] {
+        background-color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    [data-testid="stSidebar"] *, 
+    [data-testid="stSidebar"] label, 
+    [data-testid="stSidebar"] p, 
+    [data-testid="stSidebar"] span, 
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        color: #000000 !important;
+        font-weight: 800 !important;
+    }
+
+    [data-testid="stSidebar"] textarea, 
+    [data-testid="stSidebar"] input {
+        color: #000000 !important;
+        font-weight: 700 !important;
+        background-color: rgba(0, 0, 0, 0.05) !important;
+        border: 1px solid rgba(0, 0, 0, 0.3) !important;
+    }
 }
 
 /* Glassmorphic Metric Cards */
