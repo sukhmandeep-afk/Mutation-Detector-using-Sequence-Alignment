@@ -13,16 +13,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Advanced Animation & Dark Glassmorphism CSS Injector
+# 2. Styling (Hides default headers, adds dark gradient background and glass cards)
 custom_css = """
 <style>
-/* Hide default Streamlit header, footer, and top menu */
+/* Hide Streamlit header, footer, and menu */
 #MainMenu {visibility: hidden;}
 header {visibility: hidden;}
 footer {visibility: hidden;}
 .stAppHeader {display: none;}
 
-/* Main App Container with Dynamic Gradient & Moving Elements */
+/* Dark gradient background */
 .stApp {
     background: linear-gradient(-45deg, #090d16, #111827, #1e1b4b, #0f172a) !important;
     background-size: 400% 400% !important;
@@ -35,7 +35,7 @@ footer {visibility: hidden;}
     100% { background-position: 0% 50%; }
 }
 
-/* Glassmorphic Cards */
+/* Metric card styling */
 .metric-card {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -92,7 +92,7 @@ footer {visibility: hidden;}
     margin: 0;
 }
 
-/* Sequence alignment box styling */
+/* Alignment display box */
 .alignment-box {
     background-color: rgba(2, 6, 23, 0.85);
     border: 1px solid #334155;
@@ -135,27 +135,36 @@ else:
         seq1 = "".join([line.decode("utf-8").strip() for line in file1 if not line.decode("utf-8").startswith(">")]).upper()
         seq2 = "".join([line.decode("utf-8").strip() for line in file2 if not line.decode("utf-8").startswith(">")]).upper()
 
-# 5. Robust Summary Helper (Handles Dictionaries, Lists, or Objects safely)
+# 5. Summary Helper (Extracts string attributes from custom objects safely)
 def generate_summary(mutations):
     summary = {"Substitution": 0, "Insertion": 0, "Deletion": 0}
     for m in mutations:
-        m_type = None
-        if isinstance(m, dict):
-            m_type = m.get("type") or m.get("Type") or m.get("mutation_type")
+        raw_val = None
+        # Handle custom class objects, dictionaries, lists, or strings
+        if hasattr(m, "type"):
+            raw_val = getattr(m, "type")
+        elif hasattr(m, "mutation_type"):
+            raw_val = getattr(m, "mutation_type")
+        elif isinstance(m, dict):
+            raw_val = m.get("type") or m.get("Type") or m.get("mutation_type")
         elif isinstance(m, (list, tuple)) and len(m) > 0:
-            m_type = m[0]
-        
-        if m_type in summary:
-            summary[m_type] += 1
-        elif m_type:
-            # Fallback for matching strings containing key words
-            m_str = str(m_type).lower()
-            if "sub" in m_str: summary["Substitution"] += 1
-            elif "ins" in m_str: summary["Insertion"] += 1
-            elif "del" in m_str: summary["Deletion"] += 1
+            raw_val = m[0]
+        else:
+            raw_val = str(m)
+
+        # Convert to string to avoid unhashable type errors
+        m_str = str(raw_val).lower() if raw_val is not None else ""
+
+        if "sub" in m_str:
+            summary["Substitution"] += 1
+        elif "ins" in m_str:
+            summary["Insertion"] += 1
+        elif "del" in m_str:
+            summary["Deletion"] += 1
+
     return summary
 
-# 6. Pipeline Execution Trigger
+# 6. Pipeline Execution
 run_analysis = st.sidebar.button("🔬 Run Pipeline", use_container_width=True, type="primary")
 
 if run_analysis:
@@ -207,7 +216,10 @@ if run_analysis:
         with tab2:
             st.subheader("Detected Mutations (1-Based Reference Indexing)")
             if mutations:
-                df = pd.DataFrame(mutations)
+                try:
+                    df = pd.DataFrame(mutations)
+                except Exception:
+                    df = pd.DataFrame([vars(m) if hasattr(m, '__dict__') else str(m) for m in mutations])
                 st.dataframe(df, use_container_width=True)
             else:
                 st.info("No mutations detected between reference and sample sequences.")
@@ -235,7 +247,11 @@ if run_analysis:
         with tab4:
             st.subheader("Download Reports")
             if mutations:
-                df = pd.DataFrame(mutations)
+                try:
+                    df = pd.DataFrame(mutations)
+                except Exception:
+                    df = pd.DataFrame([vars(m) if hasattr(m, '__dict__') else str(m) for m in mutations])
+                
                 csv = df.to_csv(index=False).encode('utf-8')
                 st.download_button(
                     label="📥 Download CSV Mutation Report",
